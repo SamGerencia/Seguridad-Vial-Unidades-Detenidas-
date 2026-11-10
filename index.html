@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Seguridad Vial / Unidades Detenidas</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cloudflare.com"></script>
     <style>
         :root{--bg:#f7f1f0;--card:#fff;--tx:#2b1215;--mu:#7a5a5e;--ln:#ead9da;--vino:#6b1426;--osc:#8f1d24;--deep:#3d0c15;--soft:#f3dcdd;--ok:#4d7a5a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
         @media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#1c0d10;--card:#2a1418;--tx:#f6e9ea;--mu:#c7a4a8;--ln:#4a2a30;--soft:#3d1e24;--ok:#7fb48e}}
@@ -18,7 +18,7 @@
         .btn{background:#fff;color:var(--vino);border:0;border-radius:8px;padding:8px 14px;font-weight:600;cursor:pointer}.btn.g{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.35)}
         main{max-width:1280px;margin:0 auto;padding:18px}
         .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
-        .k{background:var(--card);border:1px solid var(--ln);border-left:5px solid var(--osc);border-radius:10px;padding:12px 14px;cursor:pointer}.k b{font-size:28px;color:var(--vino);display:block}.k span{color:var(--mu);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+        .k"{background:var(--card);border:1px solid var(--ln);border-left:5px solid var(--osc);border-radius:10px;padding:12px 14px;cursor:pointer}.k b{font-size:28px;color:var(--vino);display:block}.k span{color:var(--mu);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
         .bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:12px;margin-bottom:16px}
         .seg{display:flex;border:1px solid var(--vino);border-radius:8px;overflow:hidden}.seg button{border:0;background:transparent;color:var(--vino);padding:8px 13px;cursor:pointer;font-weight:600}.seg button.on{background:var(--vino);color:#fff}
         input,select{border:1px solid var(--ln);background:var(--bg);color:var(--tx);border-radius:8px;padding:9px 11px;font:inherit}#q{flex:1;min-width:220px;border-color:var(--osc)}
@@ -36,7 +36,7 @@
 </head>
 <body>
     <header>
-        <div class="badge"><img src="https://GrupoEstrellaBlanca.com/favicon.ico" alt="GEB" onerror="this.parentElement.style.display='none'"></div>
+        <div class="badge"><img src="https://grupoestrellablanca.com" alt="GEB" onerror="this.parentElement.style.display='none'"></div>
         <div><h1>Seguridad Vial / Unidades Detenidas</h1><small>Grupo Estrella Blanca</small></div>
         <div class="sp"></div>
         <button class="btn g" onclick="descargarExcelDeLaNube()">🔄 Actualizar datos</button>
@@ -57,36 +57,39 @@
     <div id="ficha"><div class="fc" id="fc"></div></div>
 
     <script>
-        // =========================================================================
-        // CONFIGURACIÓN CENTRAL DEL ENLACE DE TU EXCEL
-        // =========================================================================
-        const URL_DE_TU_EXCEL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRxp488TXs5RbrljRtxRNRQtLe6WrIuvZYtPK3lMM7XBrd-oE3-85teTStpROUW55bt6C693Aka6RHJ/pub?output=csv¨;
+        // Pega aquí tu nuevo enlace de Google Sheets que termina en pub?output=xlsx
+        const URL_DE_TU_EXCEL = "https://google.com";
 
         let BD = [], F = { q: '', seg: '', grp: '' }, GRP = 'Delegación';
 
         window.onload = function() {
-            console.log("Iniciando carga automática desde la nube...");
             descargarExcelDeLaNube();
         };
 
         function descargarExcelDeLaNube() {
-            fetch ¨https://docs.google.com/spreadsheets/d/e/2PACX-1vRxp488TXs5RbrljRtxRNRQtLe6WrIuvZYtPK3lMM7XBrd-oE3-85teTStpROUW55bt6C693Aka6RHJ/pub?output=csv¨
+            fetch(URL_DE_TU_EXCEL)
                 .then(response => {
-                    if (!response.ok) throw new Error("No se pudo conectar con el archivo en la nube.");
+                    if (!response.ok) throw new Error("Error en la conexión de red.");
                     return response.arrayBuffer();
                 })
                 .then(buffer => {
                     const data = new Uint8Array(buffer);
                     const workbook = XLSX.read(data, { type: 'array' });
-                    const sheetName = const worksheet = workbook.Sheets["PLAN"]; 
-if (!worksheet) {
-
+                    
+                    // Buscamos explícitamente la hoja llamada "PLAN" en todo el libro de Excel
+                    let worksheet = workbook.Sheets["PLAN"];
+                    
+                    // Si por alguna razón cambió el nombre, tomamos la segunda pestaña automáticamente
+                    if (!worksheet) {
+                        worksheet = workbook.Sheets[workbook.SheetNames[1]];
+                    }
+                    
                     const datosConvertidos = XLSX.utils.sheet_to_json(worksheet);
                     cargarDatos(datosConvertidos);
                 })
                 .catch(error => {
-                    console.error("Error al descargar los datos:", error);
-                    alert("Atención: No se pudieron sincronizar los datos en tiempo real. Verifica el enlace del Excel.");
+                    console.error("Error:", error);
+                    alert("Error de sincronización con Google Sheets. Verifica que esté publicado como Excel (.xlsx)");
                 });
         }
 
@@ -137,5 +140,3 @@ if (!worksheet) {
             let kpis = { t: res.length, d: 0, l: 0 };
             res.forEach(r => { if (String(r.Estado).toLowerCase().includes('liberada')) kpis.l++; else kpis.d++; });
 
-            document.getElementById('kpis').innerHTML = `
-                <div class="k" onclick="filterState('')"><b>${kpis.t}</b><span>Total Casos</span></div>
