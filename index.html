@@ -60,7 +60,7 @@
         // =========================================================================
         // CONFIGURACIÓN CENTRAL DEL ENLACE DE TU EXCEL
         // =========================================================================
-        const URL_DE_TU_EXCEL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRxp488TXs5RbrljRtxRNRQtLe6WrIuvZYtPK3lMM7XBrd-oE3-85teTStpROUW55bt6C693Aka6RHJ/pub?output=csv";
+        const URL_DE_TU_EXCEL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRxp488TXs5RbrljRtxRNRQtLe6WrIuvZYtPK3lMM7XBrd-oE3-85teTStpROUW55bt6C693Aka6RHJ/pub?output=csv¨;
 
         let BD = [], F = { q: '', seg: '', grp: '' }, GRP = 'Delegación';
 
@@ -78,8 +78,9 @@
                 .then(buffer => {
                     const data = new Uint8Array(buffer);
                     const workbook = XLSX.read(data, { type: 'array' });
-                    const sheetName = workbook.SheetNames;
-                    const worksheet = workbook.Sheets[sheetName];
+                    const sheetName = const worksheet = workbook.Sheets["PLAN"]; 
+if (!worksheet) {
+
                     const datosConvertidos = XLSX.utils.sheet_to_json(worksheet);
                     cargarDatos(datosConvertidos);
                 })
