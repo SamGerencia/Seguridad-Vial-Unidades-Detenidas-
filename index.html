@@ -68,7 +68,8 @@ const TABS=[['Plan','Detenidas'],['ROBO','Robo'],['Liberadas','Liberadas'],['*',
 const src=d=>d.origen=='Plan'?'Detenida':d.origen=='ROBO'?'Robo':'Liberada';
 function base(){const q=nrm(S.q);return D.filter(d=>q?nrm(d.eco).includes(q):(S.tab=='*'||d.origen==S.tab))}
 function filt(skipG){return base().filter(d=>(skipG||!S.ger||d.gerencia==S.ger)&&(!S.est||d.estatus==S.est)&&(!S.gest||d.gestor==S.gest)&&(!S.qg||nrm(d.gestor).includes(nrm(S.qg))))}
-function enSemanaActual(s){const d=dd(s);if(!d)return false;const n=new Date(),offset=(n.getDay()+6)%7,inicio=Date.UTC(n.getFullYear(),n.getMonth(),n.getDate()-offset),t=d.getTime();return t>=inicio&&t<inicio+7*864e5}\nfunction render(){const q=S.q.trim(),L=filt(),B=filt(true);
+function enSemanaActual(s){const d=dd(s);if(!d)return false;const n=new Date(),offset=(n.getDay()+6)%7,inicio=Date.UTC(n.getFullYear(),n.getMonth(),n.getDate()-offset),t=d.getTime();return t>=inicio&&t<inicio+7*864e5}
+function render(){const q=S.q.trim(),L=filt(),B=filt(true);
  $('seg').innerHTML=TABS.map(([k,t])=>`<button class="${!q&&S.tab==k?'on':''}" data-k="${k}">${t}</button>`).join('');
  const P=D.filter(d=>d.origen=='Plan'),av=a=>a.length?Math.round(a.reduce((s,d)=>s+(d.dias||0),0)/a.length):0,salidasSemana=D.filter(d=>d.origen=='Liberadas'&&enSemanaActual(d.liberacion)).length;
  $('kpis').innerHTML=[['Plan','Unidades detenidas',P.length],['ROBO','Robo',D.filter(d=>d.origen=='ROBO').length],['Liberadas','Liberadas',D.filter(d=>d.origen=='Liberadas').length],['','Promedio días (detenidas)',av(P)],['','Más de 90 días',P.filter(d=>d.dias>90).length],['','LIBERADAS ESTA SEMANA',salidasSemana]].map(([k,t,v])=>`<div class="k" data-k="${k}"><b>${v}</b><span>${t}</span></div>`).join('');
