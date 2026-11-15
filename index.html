@@ -51,7 +51,7 @@ const HM={ECO:'eco',ECONOMICO:'eco',GERENCIA:'gerencia',MARCA:'marca',SERIE:'ser
 const GA={'PACIFICO':'PACÍFICO','PACIFICO CENTRO':'PACÍFICO CENTRO','PACIFICO SUR':'PACÍFICO SUR','':'SIN GERENCIA'};
 const LB={eco:'Económico',gerencia:'Gerencia',marca:'Marca',serie:'Serie',modelo:'Modelo',ubicacion:'Ubicación',ingreso:'Fecha de ingreso',dias:'Días detenida',liberacion:'Fecha de liberación',gestor:'Gestor',estatus:'Estatus',oficio:'Oficio de liberación',causa:'Causa',causaLib:'Causa para liberación',autoridad:'Autoridad',obs:'Observaciones',operacion:'Operación'};
 const WIDE=['causa','causaLib','obs'];
-let D=[],S={tab:'Plan',ger:'',est:'',q:'',gest:'',qg:''};
+let D=[],S={tab:'Plan',ger:'',est:'',q:'',gest:'',qg:'',weekOnly:false};
 const dd=s=>s?new Date(s+'T00:00:00Z'):null,fd=s=>s?s.split('-').reverse().join('/'):'—';
 function iso(v){if(typeof v=='number')return new Date(Math.round((v-25569)*864e5)).toISOString().slice(0,10);if(v instanceof Date)return v.toISOString().slice(0,10);if(typeof v=='string'&&/^\d{4}-\d\d-\d\d/.test(v))return v.slice(0,10);return v==null||v===''?null:String(v).trim()}
 const today=()=>{const n=new Date();return Date.UTC(n.getFullYear(),n.getMonth(),n.getDate())};
@@ -66,30 +66,28 @@ function parse(wb){const out=[];const map={PLAN:'Plan',ROBO:'ROBO',LIBERADAS:'Li
  return out}
 const TABS=[['Plan','Detenidas'],['ROBO','Robo'],['Liberadas','Liberadas'],['*','Todas']];
 const src=d=>d.origen=='Plan'?'Detenida':d.origen=='ROBO'?'Robo':'Liberada';
-function base(){const q=nrm(S.q);return D.filter(d=>q?nrm(d.eco).includes(q):(S.tab=='*'||d.origen==S.tab))}
-function filt(skipG){return base().filter(d=>(skipG||!S.ger||d.gerencia==S.ger)&&(!S.est||d.estatus==S.est)&&(!S.gest||d.gestor==S.gest)&&(!S.qg||nrm(d.gestor).includes(nrm(S.qg))))}
+function base(){const q=nrm(S.q);return D.filter(d=>(!S.weekOnly||(d.origen=='Liberadas'&&enSemanaActual(d.liberacion)))&&(q?nrm(d.eco).includes(q):(S.tab=='*'||d.origen==S.tab)))}function filt(skipG){return base().filter(d=>(skipG||!S.ger||d.gerencia==S.ger)&&(!S.est||d.estatus==S.est)&&(!S.gest||d.gestor==S.gest)&&(!S.qg||nrm(d.gestor).includes(nrm(S.qg))))}
 function enSemanaActual(s){const d=dd(s);if(!d)return false;const n=new Date(),offset=(n.getDay()+6)%7,inicio=Date.UTC(n.getFullYear(),n.getMonth(),n.getDate()-offset),t=d.getTime();return t>=inicio&&t<inicio+7*864e5}
 function render(){const q=S.q.trim(),L=filt(),B=filt(true);
  $('seg').innerHTML=TABS.map(([k,t])=>`<button class="${!q&&S.tab==k?'on':''}" data-k="${k}">${t}</button>`).join('');
  const P=D.filter(d=>d.origen=='Plan'),av=a=>a.length?Math.round(a.reduce((s,d)=>s+(d.dias||0),0)/a.length):0,salidasSemana=D.filter(d=>d.origen=='Liberadas'&&enSemanaActual(d.liberacion)).length;
- $('kpis').innerHTML=[['Plan','Unidades detenidas',P.length],['ROBO','Robo',D.filter(d=>d.origen=='ROBO').length],['Liberadas','Liberadas',D.filter(d=>d.origen=='Liberadas').length],['','Promedio días (detenidas)',av(P)],['','Más de 90 días',P.filter(d=>d.dias>90).length],['','LIBERADAS ESTA SEMANA',salidasSemana]].map(([k,t,v])=>`<div class="k" data-k="${k}"><b>${v}</b><span>${t}</span></div>`).join('');
+ $('kpis').innerHTML=[['Plan','Unidades detenidas',P.length],['ROBO','Robo',D.filter(d=>d.origen=='ROBO').length],['Liberadas','Liberadas',D.filter(d=>d.origen=='Liberadas').length],['','Promedio días (detenidas)',av(P)],['','Más de 90 días',P.filter(d=>d.dias>90).length],['Semana','LIBERADAS ESTA SEMANA',salidasSemana]].map(([k,t,v])=>`<div class="k" data-k="${k}"><b>${v}</b><span>${t}</span></div>`).join('');
  const g={};B.forEach(d=>g[d.gerencia]=(g[d.gerencia]||0)+1);const e=Object.entries(g).sort((a,b)=>b[1]-a[1]),mx=Math.max(1,...e.map(x=>x[1]));
  $('bars').innerHTML=e.map(([n,c])=>`<div class="row ${S.ger==n?'on':''}" data-g="${esc(n)}"><span>${esc(n)}</span><i style="width:${c/mx*100}%"></i><em>${c}</em></div>`).join('')||'<div class="msg">Sin datos</div>';
  L.sort((a,b)=>(b.dias??-1)-(a.dias??-1));
  $('lt').textContent='Listado · '+L.length+' unidad'+(L.length==1?'':'es');
- $('msg').textContent=q?'Búsqueda "'+q+'" en todas las bases (detenidas, robo y liberadas).':'';
+ $('msg').textContent=q?'Búsqueda "'+q+'" en todas las bases (detenidas, robo y liberadas).':S.weekOnly?'Unidades liberadas durante la semana actual.':'';
  $('tb').innerHTML=L.map((d,i)=>`<tr class="r" data-i="${D.indexOf(d)}"><td><b>${esc(d.eco)}</b></td><td>${esc(d.gerencia)}</td><td>${esc(d.marca)}</td><td>${esc(d.ubicacion)}</td><td>${fd(d.ingreso)}</td><td>${d.dias??'—'}</td><td><span class="tag ${d.origen=='Liberadas'?'l':d.origen=='ROBO'?'x':''}">${esc(d.estatus||src(d))}</span></td><td>${esc(d.gestor)}</td></tr>`).join('')||'<tr><td colspan="8" class="msg">Sin resultados</td></tr>';
  if(q&&L.length==1&&S._last!=q){S._last=q;open(D.indexOf(L[0]))}if(!q)S._last=''}
 function open(i){const d=D[i];$('ft').textContent='Unidad '+d.eco+' · '+src(d);
  $('fb').innerHTML=Object.keys(LB).map(k=>{let v=d[k];if(k=='ingreso'||k=='liberacion')v=fd(v);else if(k=='oficio'&&/^\d{4}-\d\d-\d\d/.test(v||''))v=fd(v);return `<div class="${WIDE.includes(k)?'w':''}"><label>${LB[k]}</label>${esc(v==null||v===''?'—':v)}</div>`}).join('');$('ficha').classList.add('on')}
 function init(){const es=[...new Set(D.map(d=>d.estatus).filter(Boolean))].sort(),gs=[...new Set(D.map(d=>d.gerencia))].sort(),gests=[...new Set(D.map(d=>d.gestor).filter(Boolean))].sort();
  $('fg').innerHTML='<option value="">Todas las gerencias</option>'+gs.map(x=>`<option>${esc(x)}</option>`).join('');$('fe').innerHTML='<option value="">Todos los estatus</option>'+es.map(x=>`<option>${esc(x)}</option>`).join('');$('fgs').innerHTML='<option value="">Todos los gestores</option>'+gests.map(x=>`<option>${esc(x)}</option>`).join('');
- if(!gs.includes(S.ger))S.ger='';if(!es.includes(S.est))S.est='';if(!gests.includes(S.gest))S.gest='';$('fg').value=S.ger;$('fe').value=S.est;$('fgs').value=S.gest;$('qg').value=S.qg;render()}$('seg').onclick=e=>{if(e.target.dataset.k){S.tab=e.target.dataset.k;S.q='';$('q').value='';render()}};
-$('kpis').onclick=e=>{const k=e.target.closest('.k')?.dataset.k;if(k){S.tab=k;S.q='';$('q').value='';render()}};
-$('bars').onclick=e=>{const g=e.target.closest('.row')?.dataset.g;if(g!==undefined){S.ger=S.ger==g?'':g;$('fg').value=S.ger;render()}};
+ if(!gs.includes(S.ger))S.ger='';if(!es.includes(S.est))S.est='';if(!gests.includes(S.gest))S.gest='';$('fg').value=S.ger;$('fe').value=S.est;$('fgs').value=S.gest;$('qg').value=S.qg;render()}$('seg').onclick=e=>{if(e.target.dataset.k){S.tab=e.target.dataset.k;S.weekOnly=false;S.q='';$('q').value='';render()}};
+$('kpis').onclick=e=>{const k=e.target.closest('.k')?.dataset.k;if(!k)return;if(k==='Semana'){S.tab='Liberadas';S.weekOnly=!S.weekOnly}else{S.tab=k;S.weekOnly=false}S.q='';$('q').value='';render()};$('bars').onclick=e=>{const g=e.target.closest('.row')?.dataset.g;if(g!==undefined){S.ger=S.ger==g?'':g;$('fg').value=S.ger;render()}};
 $('tb').onclick=e=>{const r=e.target.closest('tr.r');if(r)open(+r.dataset.i)};
 $('q').oninput=e=>{S.q=e.target.value;render()};$('fg').onchange=e=>{S.ger=e.target.value;render()};$('fe').onchange=e=>{S.est=e.target.value;render()};$('fgs').onchange=e=>{S.gest=e.target.value;render()};$('qg').oninput=e=>{S.qg=e.target.value;render()};
-function reset(){S={tab:'Plan',ger:'',est:'',q:'',gest:'',qg:''};$('q').value='';$('fg').value='';$('fe').value='';$('fgs').value='';$('qg').value='';render()}
+function reset(){S={tab:'Plan',ger:'',est:'',q:'',gest:'',qg:'',weekOnly:false};$('q').value='';$('fg').value='';$('fe').value='';$('fgs').value='';$('qg').value='';render()}
 document.querySelectorAll('#pers input').forEach(c=>c.onchange=()=>{const t=c.dataset.s=='logos'?document.querySelector('.eb'):$(c.dataset.s);t.classList.toggle('hide',!c.checked);try{localStorage.setItem('sv_h_'+c.dataset.s,c.checked?'1':'0')}catch(x){}});
 document.querySelectorAll('#pers input').forEach(c=>{try{if(localStorage.getItem('sv_h_'+c.dataset.s)=='0'){c.checked=false;c.onchange()}}catch(x){}});
 $('corte').classList.remove('hide');
