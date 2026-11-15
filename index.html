@@ -68,10 +68,10 @@ const TABS=[['Plan','Detenidas'],['ROBO','Robo'],['Liberadas','Liberadas'],['*',
 const src=d=>d.origen=='Plan'?'Detenida':d.origen=='ROBO'?'Robo':'Liberada';
 function base(){const q=nrm(S.q);return D.filter(d=>q?nrm(d.eco).includes(q):(S.tab=='*'||d.origen==S.tab))}
 function filt(skipG){return base().filter(d=>(skipG||!S.ger||d.gerencia==S.ger)&&(!S.est||d.estatus==S.est)&&(!S.gest||d.gestor==S.gest)&&(!S.qg||nrm(d.gestor).includes(nrm(S.qg))))}
-function render(){const q=S.q.trim(),L=filt(),B=filt(true);
+function enSemanaActual(s){const d=dd(s);if(!d)return false;const n=new Date(),offset=(n.getDay()+6)%7,inicio=Date.UTC(n.getFullYear(),n.getMonth(),n.getDate()-offset),t=d.getTime();return t>=inicio&&t<inicio+7*864e5}\nfunction render(){const q=S.q.trim(),L=filt(),B=filt(true);
  $('seg').innerHTML=TABS.map(([k,t])=>`<button class="${!q&&S.tab==k?'on':''}" data-k="${k}">${t}</button>`).join('');
- const P=D.filter(d=>d.origen=='Plan'),av=a=>a.length?Math.round(a.reduce((s,d)=>s+(d.dias||0),0)/a.length):0;
- $('kpis').innerHTML=[['Plan','Unidades detenidas',P.length],['ROBO','Robo',D.filter(d=>d.origen=='ROBO').length],['Liberadas','Liberadas',D.filter(d=>d.origen=='Liberadas').length],['','Promedio días (detenidas)',av(P)],['','Más de 90 días',P.filter(d=>d.dias>90).length]].map(([k,t,v])=>`<div class="k" data-k="${k}"><b>${v}</b><span>${t}</span></div>`).join('');
+ const P=D.filter(d=>d.origen=='Plan'),av=a=>a.length?Math.round(a.reduce((s,d)=>s+(d.dias||0),0)/a.length):0,salidasSemana=D.filter(d=>d.origen=='Liberadas'&&enSemanaActual(d.liberacion)).length;
+ $('kpis').innerHTML=[['Plan','Unidades detenidas',P.length],['ROBO','Robo',D.filter(d=>d.origen=='ROBO').length],['Liberadas','Liberadas',D.filter(d=>d.origen=='Liberadas').length],['','Promedio días (detenidas)',av(P)],['','Más de 90 días',P.filter(d=>d.dias>90).length],['','LIBERADAS ESTA SEMANA',salidasSemana]].map(([k,t,v])=>`<div class="k" data-k="${k}"><b>${v}</b><span>${t}</span></div>`).join('');
  const g={};B.forEach(d=>g[d.gerencia]=(g[d.gerencia]||0)+1);const e=Object.entries(g).sort((a,b)=>b[1]-a[1]),mx=Math.max(1,...e.map(x=>x[1]));
  $('bars').innerHTML=e.map(([n,c])=>`<div class="row ${S.ger==n?'on':''}" data-g="${esc(n)}"><span>${esc(n)}</span><i style="width:${c/mx*100}%"></i><em>${c}</em></div>`).join('')||'<div class="msg">Sin datos</div>';
  L.sort((a,b)=>(b.dias??-1)-(a.dias??-1));
